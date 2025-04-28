@@ -22,7 +22,7 @@ pip install clickhouse-readonly-mcp
 ### 从源码安装
 
 ```bash
-git clone https://your-repo/clickhouse-readonly-mcp.git
+git clone https://github.com/the-nine-nation/clickhouse-mcp.git
 cd clickhouse-readonly-mcp
 pip install -e .
 ```

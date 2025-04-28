@@ -4,7 +4,7 @@ setup(
     name="clickhouse-readonly-mcp",
     version="0.1.0",
     description="A FastMCP server for executing read-only ClickHouse queries",
-    author="Your Name",
+    author="Lucas Luo",
     author_email="your.email@example.com",
     packages=find_packages(),
     package_data={
