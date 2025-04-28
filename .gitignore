@@ -1,0 +1,62 @@
+# Python编译文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 构建目录和文件
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 单元测试/覆盖率报告
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.env
+.venv
+mcp_env/
+
+# IDE文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 日志文件
+*.log
+
+# 本地配置文件
+config_local.json
+*.local.py 
