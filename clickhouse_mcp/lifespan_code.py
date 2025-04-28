@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 DB_CONFIG = {
-    "enabled": os.environ.get("CLICKHOUSE_ENABLED", "true"),
+    "enabled": os.environ.get("CLICKHOUSE_ENABLED","false").lower() == "true",
     "host": os.environ.get("CLICKHOUSE_HOST", "localhost"),
     "port": int(os.environ.get("CLICKHOUSE_PORT", "9000")),
     "http_port": int(os.environ.get("CLICKHOUSE_HTTP_PORT", "8123")),  # 使用CLICKHOUSE_HTTP_PORT作为HTTP端口
