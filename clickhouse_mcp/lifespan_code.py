@@ -284,21 +284,26 @@ async def app_lifespan(app) -> AsyncIterator[None]:
             logger.error(f"ClickHouse native connection failed: {native_err}")
             logger.error(traceback.format_exc())
             # 两种方式都失败了，将保持 conn=None
-        
-        # 记录最终连接状态
-        if conn is None:
-            logger.error("Failed to establish any ClickHouse connection")
-            if not CLICKHOUSE_HTTP_AVAILABLE and not CLICKHOUSE_NATIVE_AVAILABLE:
-                logger.error("Neither ClickHouse HTTP nor native drivers are available")
-            else:
-                logger.error("All connection attempts failed")
+    
+    # 记录最终连接状态
+    if conn is None:
+        logger.error("Failed to establish any ClickHouse connection")
+        if not CLICKHOUSE_HTTP_AVAILABLE and not CLICKHOUSE_NATIVE_AVAILABLE:
+            logger.error("Neither ClickHouse HTTP nor native drivers are available")
         else:
-            logger.info(f"ClickHouse connection established using {connection_mode} mode")
-            
-        app_context.connection = conn
-        app_context.connection_mode = connection_mode
+            logger.error("All connection attempts failed")
     else:
-        logger.warning("ClickHouse connection is disabled in configuration")
+        logger.info(f"ClickHouse connection established using {connection_mode} mode")
+    
+    # 修复关键错误：确保在成功建立连接时总是设置app_context对象
+    app_context.connection = conn
+    app_context.connection_mode = connection_mode
+    
+    # 如果设置了连接，但数据库功能被禁用，记录一个警告
+    if config.get("enabled") is False and conn is not None:
+        logger.warning("ClickHouse connection is available but disabled in configuration")
+    elif config.get("enabled") is True and conn is None:
+        logger.warning("ClickHouse connection is enabled but could not be established")
 
     try:
         logger.info("App is now running")
