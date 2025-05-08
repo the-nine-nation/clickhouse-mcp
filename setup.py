@@ -18,7 +18,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "clickhouse-mcp=clickhouse_mcp.main:main",
+            "clickhouse-mcp=clickhouse_mcp:main",
         ],
     },
     python_requires=">=3.10",
