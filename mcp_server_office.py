@@ -249,35 +249,57 @@ def list_tables(
     database: str, like: Optional[str] = None, not_like: Optional[str] = None,
     
 ):
-    """List available ClickHouse tables in a database, including schema, comment,
-    row count, and column count."""
+    """List available ClickHouse tables in a database, including only essential info:
+    table name, engine, row count, and size."""
     logger.info(f"Listing tables in database '{database}'")
     client = create_clickhouse_client()
-    query = f"SELECT database, name, engine, create_table_query, dependencies_database, dependencies_table, engine_full, sorting_key, primary_key, total_rows, total_bytes, total_bytes_uncompressed, parts, active_parts, total_marks, comment FROM system.tables WHERE database = {format_query_value(database)}"
+    query = f"SELECT name, engine, total_rows, total_bytes, comment FROM system.tables WHERE database = {format_query_value(database)}"
+    
+    # Exclude system tables and tables with names starting with a dot
+    query += " AND database != 'system'"
+    query += " AND NOT startsWith(name, '.')"
+    
     if like:
         query += f" AND name LIKE {format_query_value(like)}"
 
     if not_like:
         query += f" AND name NOT LIKE {format_query_value(not_like)}"
 
-    result = client.query(query)
+    try:
+        result = client.query(query)
+        
+        # Convert to a simple list of dictionaries with only essential information
+        tables = []
+        for row in result.result_rows:
+            table_info = dict(zip(result.column_names, row))
+            # Add the database name
+            table_info['database'] = database
+            # Format size for readability
+            table_info['size_readable'] = format_bytes(table_info.get('total_bytes'))
+            tables.append(table_info)
 
-    # Deserialize result as Table dataclass instances
-    tables = result_to_table(result.column_names, result.result_rows)
+        logger.info(f"Found {len(tables)} tables")
+        return tables
+    except Exception as e:
+        logger.error(f"Error in list_tables: {str(e)}")
+        return {"error": str(e)}
 
-    for table in tables:
-        column_data_query = f"SELECT database, table, name, type AS column_type, default_kind, default_expression, comment FROM system.columns WHERE database = {format_query_value(database)} AND table = {format_query_value(table.name)}"
-        column_data_query_result = client.query(column_data_query)
-        table.columns = [
-            c
-            for c in result_to_column(
-                column_data_query_result.column_names,
-                column_data_query_result.result_rows,
-            )
-        ]
 
-    logger.info(f"Found {len(tables)} tables")
-    return [asdict(table) for table in tables]
+def format_bytes(size):
+    """Format bytes to human-readable format"""
+    if size is None:
+        return "0 B"
+    
+    if size == 0:
+        return "0 B"
+        
+    power = 2**10
+    n = 0
+    power_labels = {0: 'B', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
+    while size > power:
+        size /= power
+        n += 1
+    return f"{size:.2f} {power_labels[n]}"
 
 
 def execute_query(
@@ -390,6 +412,7 @@ def get_readonly_setting(client) -> str:
             return read_only.value  # Respect server's readonly setting (likely 2)
     else:
         return "1"  # Default to basic read-only mode if setting isn't present
+
 # 添加主函数入口点
 if __name__ == "__main__":
     # 直接运行服务器
