@@ -2,6 +2,10 @@
 
 一个用于执行只读ClickHouse查询的FastMCP服务器，支持本地Python API集成和作为独立服务运行。
 
+## 更新
+
+**20250509**:添加了对官方的clickhouse mcp的代码,并进行了优化,避免多次调用的思路回环.
+
 ## 功能特点
 
 - 支持通过MCP工具执行只读SQL查询
@@ -48,6 +52,23 @@ clickhouse_mcp_py为main.py的绝对路径
             }
     }
 ```
+或者使用经过我们优化的官方实现:
+```json
+    "clickhouse": {
+        "command": sys.executable,
+        "args": [clickhouse_mcp_py],
+    "env": {
+        "CLICKHOUSE_HOST": "<clickhouse-host>",
+        "CLICKHOUSE_PORT": "<clickhouse-port>",
+        "CLICKHOUSE_USER": "<clickhouse-user>",
+        "CLICKHOUSE_PASSWORD": "<clickhouse-password>",
+        "CLICKHOUSE_SECURE": "true",
+        "CLICKHOUSE_VERIFY": "true",
+        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
+        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "30"
+      }
+```
+
 请注意:
 1.CLICKHOUSE_PORT为原生连接的端口,CLICKHOUSE_HTTP_PORT为http协议端口,该mcp会自动切换,不一定需要全部填写;
 2.CLICKHOUSE_RESOURCE_DESC_FILE是一个说明,可以将数据库中一些信息放入其中,例如什么表是做什么用的,能够提升模型理解能力.

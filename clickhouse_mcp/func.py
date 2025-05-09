@@ -266,7 +266,7 @@ def process_native_result(result_set, query_lower, max_rows):
         }
 
 def format_query_results(result) -> str:
-    """格式化查询结果为字符串，使用更紧凑的格式减少token消耗"""
+    """格式化查询结果为字符串，使用表格格式提高可读性"""
     # 快速处理错误和空结果
     if not result.get("success"):
         return f"Error executing query: {result.get('error', 'Unknown error')}"
@@ -281,26 +281,62 @@ def format_query_results(result) -> str:
     data = result["data"]
     column_names = result.get("column_names", [])
     
-    # 预分配列表大小以避免动态扩展
-    row_count = len(data) + (1 if column_names else 0) + 2  # 数据行 + 标题行 + 摘要行 + 空行
-    output_lines = []
-    output_lines.append("\t".join(str(col) for col in column_names) if column_names else "")
+    # 准备数据行
+    rows = []
+    if column_names:
+        rows.append(column_names)
     
-    # 通过单一逻辑处理所有数据类型
+    # 处理各种格式的数据
     if isinstance(data[0], dict):
         # 字典数据
         for row in data:
-            output_lines.append("\t".join(str(row.get(col, '')) for col in column_names))
+            rows.append([row.get(col, '') for col in column_names])
     elif isinstance(data[0], list):
-        # 列表数据 - 直接使用列表推导式进行批处理
-        output_lines.extend("\t".join(str(cell) for cell in row) for row in data)
+        # 列表数据
+        rows.extend(data)
     else:
         # 单值数据
-        output_lines.extend(str(item) for item in data)
+        rows.extend([[item] for item in data])
     
-    # 添加摘要信息
-    output_lines.append("")
+    # 计算每列的最大宽度
+    if not rows:
+        return "Query executed. No data to display."
+    
+    # 将所有数据转换为字符串
+    str_rows = [[str(cell) for cell in row] for row in rows]
+    
+    # 计算每列宽度（最小宽度为列名长度）
+    col_widths = []
+    for i in range(len(str_rows[0])):
+        col_widths.append(max(len(row[i]) for row in str_rows if i < len(row)))
+    
+    # 创建格式化字符串
+    row_format = "| " + " | ".join("{:<" + str(width) + "}" for width in col_widths) + " |"
+    
+    # 创建分隔行
+    separator = "+" + "+".join("-" * (width + 2) for width in col_widths) + "+"
+    separator = separator.replace("--", "--")
+    
+    # 构建结果表格
+    output_lines = [separator]
+    
+    # 添加标题行和标题分隔行（如果有列名）
+    if column_names:
+        output_lines.append(row_format.format(*str_rows[0]))
+        output_lines.append(separator)
+        data_rows = str_rows[1:]
+    else:
+        data_rows = str_rows
+    
+    # 添加数据行
+    for row in data_rows:
+        # 确保行有足够的单元格数量
+        while len(row) < len(col_widths):
+            row.append("")
+        output_lines.append(row_format.format(*row))
+    
+    # 添加底部分隔行和摘要
+    output_lines.append(separator)
     output_lines.append(f"Total rows: {result['row_count']} (showing first {len(data)})")
     
-    # 使用join一次性构建结果字符串
     return "\n".join(output_lines)

@@ -60,6 +60,8 @@ async def clickhouse_execute_read(sql_query: Annotated[str, Field(description="T
         return f"Error: {str(e)}\n{traceback.format_exc()}"
     
 
+    
+
 
 def get_connection() -> Optional[DatabaseConnection]:
     """获取由生命周期管理的ClickHouse数据库连接"""
